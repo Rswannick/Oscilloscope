@@ -12,13 +12,16 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include "Background/Background.h"
-#include "Oscilloscope/OScopeComponent.h"
-#include "Oscilloscope/OScopeComponent2.h"
-#include "ChannelControls/CH1.h"
-#include "ChannelControls/CH2.h"
-#include "GlobalControls/Global.h"
-#include "LAF.h"
+#include "GUI/Background/Background.h"
+#include "GUI/ChannelControls/CH1.h"
+#include "GUI/ChannelControls/CH2.h"
+#include "GUI/GlobalControls/Global.h"
+#include "GUI/Top Bar/TopBar.h"
+#include "LookAndFeel/LAF.h"
+
+#include "GUI/Oscilloscope/OScopeComponent.h"
+#include "GUI/Oscilloscope/Oscilloscope_Screen.h"
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -28,11 +31,12 @@
 #define JUCE_IOS 0 // Define a default value if JUCE_IOS is not defined
 #endif
 
+
 //==============================================================================
 /**
 */
 
-class OscilliscopeAudioProcessorEditor  : public juce::AudioProcessorEditor, public juce::Slider::Listener, juce::Button::Listener, juce::Timer
+class OscilliscopeAudioProcessorEditor  : public juce::AudioProcessorEditor, juce::Button::Listener, juce::Slider::Listener, juce::Timer, juce::ComboBox::Listener
 {
 public:
     OscilliscopeAudioProcessorEditor (OscilliscopeAudioProcessor&);
@@ -42,10 +46,16 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     
-    void sliderValueChanged (juce::Slider* slider) override;
+    void comboBoxChanged(juce::ComboBox *box) override;
+    void sliderValueChanged(juce::Slider *slider) override;
     void buttonStateChanged(juce::Button *button) override;
     void buttonClicked(juce::Button *button) override;
     void timerCallback() override;
+
+    void setOSCColor1();
+    void setOSCColor2();
+    void setPresetColor1();
+    void setPresetColor2();
 
     void addComponents();
     void addListeners();
@@ -54,32 +64,30 @@ public:
     
     juce::Rectangle<int> setiOSBounds(juce::Rectangle<int> iOSBounds);
     
-    float sizeX { 800 };
-    float sizeY { (800  / (6.0/3.0) ) };
+    float ratio { 2436 / 1125 }, sizeX { 800 / ratio }, sizeY { 800  };
     
     //Open Settings Menu
     void openSettings();
 
 private:
     OscilliscopeAudioProcessor& audioProcessor;
-    
     //LookAndFeel
     LAFComponent cLAF;
-    
     //Settings menu
     juce::ImageButton mSettings;
     
     BackgroundComponent cBackground;
     GlobalComponent cGlobal;
-    CH1Component cCH1;
-    CH2Component cCH2;
-    OScopeComponent cOscope;
-    OScopeComponent2 cOscope2;
+    CHComponent cCH1, cCH2;
+    OscilloscoeScreen oScopeScreen;
     
-    juce::ToggleButton
-    mBypass,
-    mPolarity;
-
+    TopBarComponent cTopBar;
+    juce::ToggleButton mBypass, mPolarity, mXYMode, mFullscreen;
+    juce::TextButton blackBox;
     
+    using Attachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
+    
+    std::unique_ptr<Attachment> mBypassAttachment, mPolarityAttachment, mXYAttachment, mFSAttachment;
+        
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscilliscopeAudioProcessorEditor)
 };

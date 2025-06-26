@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<parameters PresetName="180 Fullscreen" WIDTH="930.0" HEIGHT="465.0" COLOR1="ff9acd32"
+            COLOR2="ffffff00">
+  <PARAM id="CH 1 H OFFSET" value="1.0"/>
+  <PARAM id="CH 1 SECONDS" value="1.0"/>
+  <PARAM id="CH 1 V OFFSET" value="1.0"/>
+  <PARAM id="CH 1 VOLTS" value="1.0"/>
+  <PARAM id="CH 2 H OFFSET" value="1.0"/>
+  <PARAM id="CH 2 SECONDS" value="1.0"/>
+  <PARAM id="CH 2 V OFFSET" value="1.0"/>
+  <PARAM id="CH 2 VOLTS" value="1.0"/>
+  <PARAM id="GAIN" value="3.576278686523438e-7"/>
+  <PARAM id="LINE THICKNESS" value="3.0"/>
+  <PARAM id="MONO/STEREO" value="0.0"/>
+  <PARAM id="PHASE" value="0.0"/>
+  <PARAM id="POWER" value="1.0"/>
+  <PARAM id="ROTATION" value="1.579999923706055"/>
+  <PARAM id="Fullscreen" value="1.0"/>
+  <PARAM id="QUALITY"/>
+  <PARAM id="VOLUME"/>
+  <PARAM id="XY Mode"/>
+</parameters>

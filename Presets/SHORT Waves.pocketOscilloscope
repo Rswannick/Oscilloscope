@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<parameters PresetName="SHORT Waves" WIDTH="930.0" HEIGHT="465.0" COLOR1="ff00ff6b"
+            COLOR2="ff28ffe8">
+  <PARAM id="CH 1 H OFFSET" value="0.8899999856948853"/>
+  <PARAM id="CH 1 SECONDS" value="0.7699999809265137"/>
+  <PARAM id="CH 1 V OFFSET" value="0.7400000095367432"/>
+  <PARAM id="CH 1 VOLTS" value="1.100000023841858"/>
+  <PARAM id="CH 2 H OFFSET" value="0.8899999856948853"/>
+  <PARAM id="CH 2 SECONDS" value="0.7699999809265137"/>
+  <PARAM id="CH 2 V OFFSET" value="1.490000009536743"/>
+  <PARAM id="CH 2 VOLTS" value="1.049999952316284"/>
+  <PARAM id="GAIN" value="3.576278686523438e-7"/>
+  <PARAM id="LINE THICKNESS" value="3.0"/>
+  <PARAM id="MONO/STEREO" value="1.0"/>
+  <PARAM id="PHASE" value="0.0"/>
+  <PARAM id="POWER" value="1.0"/>
+  <PARAM id="ROTATION" value="0.0"/>
+</parameters>

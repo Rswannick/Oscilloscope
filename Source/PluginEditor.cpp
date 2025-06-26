@@ -11,7 +11,12 @@
 
 //==============================================================================
 OscilliscopeAudioProcessorEditor::OscilliscopeAudioProcessorEditor (OscilliscopeAudioProcessor& p)
-: AudioProcessorEditor (&p), audioProcessor (p), cOscope (p), cOscope2(p)
+: AudioProcessorEditor (&p), audioProcessor (p),
+cGlobal(p.apvts, "GAIN", "ROTATION", "LINE THICKNESS", "MONO/STEREO"),
+cCH1(p.apvts, "CH 1 V OFFSET", "CH 1 H OFFSET", "CH 1 VOLTS", "CH 1 SECONDS"),
+cCH2(p.apvts, "CH 2 V OFFSET", "CH 2 H OFFSET", "CH 2 VOLTS", "CH 2 SECONDS"),
+oScopeScreen(p),
+cTopBar(p)
 {
     addLookAndFeel();
     addComponents();
@@ -24,6 +29,12 @@ OscilliscopeAudioProcessorEditor::~OscilliscopeAudioProcessorEditor()
     stopTimer();
     mBypass.setLookAndFeel(nullptr);
     mPolarity.setLookAndFeel(nullptr);
+    mXYMode.setLookAndFeel(nullptr);
+    mFullscreen.setLookAndFeel(nullptr);
+    blackBox.setLookAndFeel(nullptr);
+    
+//    mFSAttachment.reset();
+//    mXYAttachment.reset();
 }
 
 //==============================================================================
@@ -39,196 +50,284 @@ void OscilliscopeAudioProcessorEditor::resized()
     
     bounds = setiOSBounds(bounds);
     
-    float scopeX = bounds.getX() + bounds.getWidth() / 16;
+    float scopeX = bounds.getX() + (bounds.getWidth() * (0.05));
     float scopeY = bounds.getY() + bounds.getHeight() / 6;
-    float scopeW = bounds.getWidth() / 2.05;
-    float scopeH = bounds.getHeight() / 1.85;
+    float scopeW = bounds.getWidth() / 2.0;
+    float scopeH = bounds.getHeight() / 1.585;
     
     float globalX = bounds.getX() +  bounds.getWidth() * .11;
-    float globalY = bounds.getY() + bounds.getHeight() * .83;
+    float globalY = bounds.getY() + bounds.getHeight() * .875;
     float globalW = bounds.getWidth() * .7915;
     float globalH = bounds.getHeight() * .0825;
     
-    float chX =  bounds.getX() + bounds.getWidth() * .60;
-    float ch1Y = bounds.getY() + bounds.getHeight() * .230;
-    float ch2Y = bounds.getY() + bounds.getHeight() * .525;
+    float chX =  bounds.getX() + bounds.getWidth() * .610;
+    float ch1Y = bounds.getY() + bounds.getHeight() * .225;
+    float ch2Y = bounds.getY() + bounds.getHeight() * .54;
     float chW = bounds.getWidth() * .325;
     float chH = bounds.getHeight() * .130;
     
     float buttonX =  bounds.getX() + bounds.getWidth() * .895;
-    float buttonY = bounds.getY() + bounds.getHeight() * .705;
-    float buttonW = bounds.getWidth() * .045;
-    float buttonH = bounds.getHeight() * .065;
+    float buttonY = bounds.getY() + bounds.getHeight() * .74;
+    float buttonW = bounds.getHeight() * .080;
+    float buttonH = bounds.getHeight() * .080;
     
-    if (JUCE_IOS)
-    {
-        globalY = bounds.getY() + bounds.getHeight() * .825;
-        ch2Y = bounds.getY() + bounds.getHeight() * .53;
-        buttonY = bounds.getY() + bounds.getHeight() * .70;
+    float switchH;
+    float switchW;
+    
+    float aspectRatio = 82.0f / 108.0f; // Width divided by height
+    float availableWidth = bounds.getWidth() * 0.10f; // Considering 95% of available width
+    float availableHeight = bounds.getHeight() * 0.10f; // Considering 95% of available height
+
+    // Calculate button width and height based on the aspect ratio
+    if (availableWidth / availableHeight > aspectRatio) {
+        // Height is limiting factor
+       switchH = availableHeight;
+       switchW = switchH * aspectRatio;
+    } else {
+        // Width is limiting factor
+        switchW = availableWidth;
+        switchH = switchW / aspectRatio;
     }
 
     //Visuals
-    cBackground.setBounds(bounds);
-    cOscope.setBounds(scopeX, scopeY, scopeW, scopeH);
-    cOscope2.setBounds(scopeX, scopeY, scopeW, scopeH);
-    //Hide Oscilloscope when off
-    if (mBypass.getToggleState() == 0) { cOscope.scopeComponent.setVisible(true); cOscope2.scopeComponent2.setVisible(true); }
-    else { cOscope.scopeComponent.setVisible(false); cOscope2.scopeComponent2.setVisible(false);}
-    //Controls
-    cGlobal.setBounds(globalX, globalY, globalW, globalH);
-    cCH1.setBounds(chX, ch1Y, chW, chH);
-    cCH2.setBounds(chX, ch2Y, chW, chH);
-    //Power
-    mBypass.setBounds(buttonX, buttonY, buttonW, buttonH);
-    //Polarity
-    mPolarity.setBounds(mBypass.getX() - (buttonW * 3.45), buttonY, buttonW * .75, buttonH * 1.25);
+    float backGroundW = bounds.getWidth();
+    float backGroundH = bounds.getHeight();
+    float backGroundX = bounds.getX();
+    float backGroundY = bounds.getY();
     
-    //Settings// - Settings Button
-    mSettings.setBounds(bounds.getX() + (bounds.getRight() * .93), bounds.getY() + (bounds.getHeight() * .90), bounds.getWidth() * .075,  bounds.getHeight() * .075);
+    //Background
+    cBackground.setBounds(backGroundX, backGroundY, backGroundW, backGroundH);
+
+    if (audioProcessor.fullScreen)
+    {
+        blackBox.setBounds(backGroundX, backGroundY + (bounds.getHeight() * .099), backGroundW, backGroundH * .90);
+        //Scope screen
+        oScopeScreen.setBounds(backGroundX, backGroundY + (bounds.getHeight() * .099), backGroundW, backGroundH * (.90));
+        //Top Bar
+        cTopBar.setBounds(backGroundX, backGroundY, backGroundW, backGroundH);
+    }
+    else
+    {
+        //Top Bar
+        cTopBar.setBounds(backGroundX, backGroundY, backGroundW, backGroundH);
+        //Oscillator Screen
+        oScopeScreen.setBounds(scopeX, scopeY, scopeW, scopeH);
+        //Controls
+        cGlobal.setBounds(globalX, globalY, globalW, globalH);
+        cCH1.setBounds(chX, ch1Y, chW, chH);
+        cCH2.setBounds(chX, ch2Y, chW, chH);
+        //Power
+        mBypass.setBounds(buttonX, buttonY, buttonW, buttonH);
+        //Polarity
+        mPolarity.setBounds(mBypass.getX() - (buttonW * 3.85), buttonY + (bounds.getHeight() * .001), switchW, switchH);
+    }
     
+    //Fullscreen XY Mode
+    mFullscreen.setBounds(bounds.getX() + (bounds.getWidth() * .69), backGroundY + (bounds.getHeight() * .0335), buttonW * .5, buttonH * .5);
+    mXYMode.setBounds(bounds.getX() + (bounds.getWidth() * .735), backGroundY + (bounds.getHeight() * .0395), buttonW * .86, buttonW * .36);
+    
+    //Variable Parameters
     audioProcessor.windowW = bounds.getWidth();
     audioProcessor.windowH = bounds.getHeight();
-    
-}
-
-void OscilliscopeAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
-{
-    if (slider == &cGlobal.mGainSlider) { audioProcessor.cOscilloscope.gainValue = cGlobal.mGainSlider.getValue(); }
-    if (slider == &cGlobal.mThicknessSlider) { cOscope.scopeComponent.mThick = cGlobal.mThicknessSlider.getValue(); cOscope2.scopeComponent2.mThick2 = cGlobal.mThicknessSlider.getValue(); }
-    if (slider == &cGlobal.mRotationSlider) { cOscope.scopeComponent.mRotation = cGlobal.mRotationSlider.getValue();
-        cOscope2.scopeComponent2.mRotation2 = cGlobal.mRotationSlider.getValue(); }
-
-    
-    if (slider == &cCH1.mVOffsetSlider) { cOscope.scopeComponent.mVOffset = cCH1.mVOffsetSlider.getValue(); }
-    if (slider == &cCH1.mHOffsetSlider) { cOscope.scopeComponent.mHOffset = cCH1.mHOffsetSlider.getValue(); }
-    if (slider == &cCH1.mSecondsSlider) { cOscope.scopeComponent.mSeconds = cCH1.mSecondsSlider.getValue(); }
-    if (slider == &cCH1.mVoltsSlider) { cOscope.scopeComponent.mVolts = cCH1.mVoltsSlider.getValue(); }
-
-    if (slider == &cCH2.mVOffsetSlider) { cOscope2.scopeComponent2.mVOffset2 = cCH2.mVOffsetSlider.getValue(); }
-    if (slider == &cCH2.mHOffsetSlider) { cOscope2.scopeComponent2.mHOffset2 = cCH2.mHOffsetSlider.getValue(); }
-    if (slider == &cCH2.mSecondsSlider) { cOscope2.scopeComponent2.mSeconds2 = cCH2.mSecondsSlider.getValue(); }
-    if (slider == &cCH2.mVoltsSlider) { cOscope2.scopeComponent2.mVolts2 = cCH2.mVoltsSlider.getValue(); }
+    //Top Bar Name Fix
+    if (audioProcessor.pname.isNotEmpty()) { cTopBar.setPresetBarText(audioProcessor.pname); }
 }
 
 void OscilliscopeAudioProcessorEditor::buttonStateChanged(juce::Button *button)
 {
-    if (button == &mPolarity)
-    {
-        if (mPolarity.getToggleState())
-        { cOscope.scopeComponent.mPhase = 1;
-          cOscope2.scopeComponent2.mPhase2 = 1; }
-        else { cOscope.scopeComponent.mPhase = -1 ;
-               cOscope2.scopeComponent2.mPhase2 = -1; }
-    }
 
-    if (button == &mBypass)
+    if ( mBypass.getToggleState() )
     {
-        audioProcessor.cOscilloscope.mBypass = mBypass.getToggleState();
-        resized();
+        if (cGlobal.mMonoStereo.getToggleState())
+        { oScopeScreen.cOscope.setVisible(true);  oScopeScreen.cOscope2.setVisible(true); }
+        else { oScopeScreen.cOscope.setVisible(true); oScopeScreen.cOscope2.setVisible(false); }
+    }
+    else
+    {
+        if (cGlobal.mMonoStereo.getToggleState()) { oScopeScreen.cOscope.setVisible(false);  oScopeScreen.cOscope2.setVisible(false); }
+        else { oScopeScreen.cOscope.setVisible(false); oScopeScreen.cOscope2.setVisible(false); }
     }
     
     if (button == &cGlobal.mMonoStereo)
     {
-       if (cGlobal.mMonoStereo.getToggleState())
-       {cOscope.setVisible(true);
-        cOscope2.setVisible(true);
-       }
-       else
-       { cOscope.setVisible(true);
-         cOscope2.setVisible(false);
-       }
+       if (cGlobal.mMonoStereo.getToggleState()) { oScopeScreen.cOscope.setVisible(true);  oScopeScreen.cOscope2.setVisible(true); }
+       else { oScopeScreen.cOscope.setVisible(true); oScopeScreen.cOscope2.setVisible(false); }
+    }
+    
+    if (button == &mPolarity)
+    {
+        oScopeScreen.cOscope.scopeComponent.mPhase = audioProcessor.apvts.getRawParameterValue("PHASE")->load();
+        oScopeScreen.cOscope2.scopeComponent.mPhase =
+        audioProcessor.apvts.getRawParameterValue("PHASE")->load();
+    }
+    
+    if (button == &mXYMode)
+    {
+        if (mXYMode.getToggleState())
+        {
+            audioProcessor.xyMode = true;
+        }
+        else
+        {
+            audioProcessor.xyMode = false;
+        }
+    }
+    
+    if (button == &mFullscreen)
+    {
+        if (button->getToggleState())
+        {
+            audioProcessor.fullScreen = true;
+            blackBox.setVisible(true);
+            //Controls
+            cGlobal.setVisible(false);
+            cCH1.setVisible(false);
+            cCH2.setVisible(false);
+            //Power
+            mBypass.setVisible(false);
+            //Polarity
+            mPolarity.setVisible(false);
+        }
+        else
+        {
+            audioProcessor.fullScreen = false;
+            //
+            blackBox.setVisible(false);
+            //Controls
+            cGlobal.setVisible(true);
+            cCH1.setVisible(true);
+            cCH2.setVisible(true);
+            //Power
+            mBypass.setVisible(true);
+            //Polarity
+            mPolarity.setVisible(true);
+        }
+        repaint();
+        resized();
     }
 }
 
 void OscilliscopeAudioProcessorEditor::buttonClicked(juce::Button *button)
 {
     //Necessary function for Button Listener
+    if (button == &cTopBar.cSettings.mOSCColor1)
+    {
+        cTopBar.cSettings.selectColor();
+        setOSCColor1();
+    }
+    
+    if (button == &cTopBar.cSettings.mOSCColor2)
+    {
+        cTopBar.cSettings.selectColor2();
+        setOSCColor2();
+    }
+
 }
 
 void OscilliscopeAudioProcessorEditor::timerCallback()
 {
-    cOscope.scopeComponent.rmsValue = audioProcessor.cOscilloscope.rmsValue;
-    cOscope.scopeComponent.peakValue = audioProcessor.cOscilloscope.peakValue;
-    cOscope2.scopeComponent2.rmsValue2 = audioProcessor.cOscilloscope.rmsValue2;
-    cOscope2.scopeComponent2.peakValue2 = audioProcessor.cOscilloscope.peakValue2;
+    if (juce::JUCEApplication::isStandaloneApp())
+    {
+        oScopeScreen.cOscope.scopeComponent.shouldPaint = cTopBar.cSettings.audioDeviceNotSelected(false);
+    }
+    
+    oScopeScreen.cOscope.scopeComponent.mFreq = audioProcessor.FREQ;
+    
+    oScopeScreen.rmsValue = audioProcessor.smoothedRMS.getNextValue();
+    
+    oScopeScreen.cOscope.scopeComponent.rmsValue = audioProcessor.smoothedRMS.getNextValue();
+    
+    oScopeScreen.cOscope.scopeComponent.peakValue = audioProcessor.PEAKL;
+    
+    cTopBar.cMasterSection.cMeter.currentPeakL = audioProcessor.PEAKL;
+    cTopBar.cMasterSection.cMeter.currentPeakR = audioProcessor.PEAKR;
+    
+    oScopeScreen.cOverlay.repaint();
 }
 
 void OscilliscopeAudioProcessorEditor::openSettings()
 {
     auto pluginHolder = juce::StandalonePluginHolder::getInstance();
     pluginHolder->showAudioSettingsDialog();
+    pluginHolder->shouldMuteInput = false;
 }
 
 void OscilliscopeAudioProcessorEditor::addComponents()
 {
+    mXYAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "XY Mode", mXYMode);
+    mFSAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "Fullscreen", mFullscreen);
+    mBypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "POWER", mBypass);
+    mPolarityAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "PHASE", mPolarity);
     cGlobal.mMonoStereo.setToggleState(false, juce::NotificationType::dontSendNotification);
-
-    //Settings Menu
-     auto settingsOff = juce::ImageCache::getFromMemory (BinaryData::settingsIcon_png, BinaryData::settingsIcon_pngSize);
-    
-     mSettings.setImages(false, true, true, settingsOff, 1, juce::Colours::white, settingsOff, 0, juce::Colours::grey, settingsOff, 1, juce::Colours::yellow);
-     mSettings.onClick = [this] { openSettings(); };
-    
     //Add Visual subcomponents
     addAndMakeVisible(cBackground);
-    addAndMakeVisible(cOscope);
-    addAndMakeVisible(cOscope2);
-    cOscope2.setVisible(false);
-
+    addChildComponent(blackBox);
+    addAndMakeVisible(oScopeScreen);
+    oScopeScreen.cOscope2.setVisible(false);
     //Add Control Subcomponents
     addAndMakeVisible(cGlobal);
     addAndMakeVisible(cCH1);
     addAndMakeVisible(cCH2);
-    
-    if (juce::JUCEApplication::isStandaloneApp())
-    {
-        addAndMakeVisible(mSettings);
-        mSettings.onClick = [this] { openSettings(); };
-    }
-    
+    //
+    cGlobal.mThicknessSlider.addListener(this);
+    cGlobal.mRotationSlider.addListener(this);
+    cTopBar.cSettings.mOSCColor1.addListener(this);
+    cTopBar.cSettings.mOSCColor2.addListener(this);
+    cTopBar.cPresetManager.mLoadPresetDropDown.addListener(this);
+    mPolarity.addListener(this);
+    //
+    cCH1.mVoltsSlider.addListener(this);
+    cCH1.mSecondsSlider.addListener(this);
+    cCH1.mVOffsetSlider.addListener(this);
+    cCH1.mHOffsetSlider.addListener(this);
+    //
+    cCH2.mVoltsSlider.addListener(this);
+    cCH2.mSecondsSlider.addListener(this);
+    cCH2.mVOffsetSlider.addListener(this);
+    cCH2.mHOffsetSlider.addListener(this);
+    mFullscreen.addListener(this);
+    mXYMode.addListener(this);
+    //
     //Bypass Polarity
     addAndMakeVisible(mBypass);
     addAndMakeVisible(mPolarity);
-    
+    addAndMakeVisible(mXYMode);
+    addAndMakeVisible(mFullscreen);
+    addAndMakeVisible(cTopBar);
+    //
 }
 
 void OscilliscopeAudioProcessorEditor::addListeners()
 {
     //Listeners
-    cGlobal.mGainSlider.addListener(this);
-    cGlobal.mRotationSlider.addListener(this);
-    cGlobal.mThicknessSlider.addListener(this);
     cGlobal.mMonoStereo.addListener(this);
-    
-    cCH1.mHOffsetSlider.addListener(this);
-    cCH1.mVoltsSlider.addListener(this);
-    cCH1.mVOffsetSlider.addListener(this);
-    cCH1.mSecondsSlider.addListener(this);
-           
-    cCH2.mHOffsetSlider.addListener(this);
-    cCH2.mVoltsSlider.addListener(this);
-    cCH2.mVOffsetSlider.addListener(this);
-    cCH2.mSecondsSlider.addListener(this);
-    
     mBypass.addListener(this);
-    mPolarity.addListener(this);
 }
 
 void OscilliscopeAudioProcessorEditor::addLookAndFeel()
 {
-    juce::LookAndFeel::getDefaultLookAndFeel().setDefaultLookAndFeel(&cLAF.newLAF);
+    juce::LookAndFeel::getDefaultLookAndFeel().setDefaultLookAndFeel(&cLAF.lOSC);
     
-    mBypass.setLookAndFeel(&cLAF.lBypass);
-    mPolarity.setLookAndFeel(&cLAF.lPhase);
+    mBypass.setName("POWER"); mBypass.setLookAndFeel(&cLAF.lOSC);
+    mPolarity.setName("PHASE"); mPolarity.setLookAndFeel(&cLAF.lOSC);
+    
+    mXYMode.setName("XY"); mXYMode.setLookAndFeel(&cLAF.lOSC);
+    mFullscreen.setName("Fullscreen"); mFullscreen.setLookAndFeel(&cLAF.lOSC);
+    
+    blackBox.setName("BLACK");
+    blackBox.setLookAndFeel(&cLAF.lOSC);
+
+
 }
 
 void OscilliscopeAudioProcessorEditor::setGUISize()
 {
+    
     sizeX = audioProcessor.windowW;
     sizeY = audioProcessor.windowH;
     
-    double ratio = 6.0/3.0;
     
+        
     if (JUCE_IOS)
     {
         auto screenSize = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
@@ -236,18 +335,23 @@ void OscilliscopeAudioProcessorEditor::setGUISize()
         float height = screenSize.getHeight();
         sizeX = width;
         sizeY = height;
-        startTimer(120);
+        startTimer(60);
+        setSize(sizeX, sizeY);
     }
     else
     {
         setResizable(true, true);
-        ratio = ratio = 6.0/3.0;
         setResizeLimits(400, 400/ratio, 1200, 1200/ratio);
         getConstrainer()->setFixedAspectRatio(ratio);
-        startTimer(60);
+        startTimer(30);
+        
+        if (sizeX > 1200 && sizeX < 800)
+        { setSize(sizeX, sizeY); }
+        else { setSize(800, 800 /ratio); }
+        
+        
     }
     
-    setSize(sizeX, sizeY);
 }
 
 juce::Rectangle<int>  OscilliscopeAudioProcessorEditor::setiOSBounds(juce::Rectangle<int> iOSBounds)
@@ -275,3 +379,106 @@ juce::Rectangle<int>  OscilliscopeAudioProcessorEditor::setiOSBounds(juce::Recta
     
     return iOSBounds;
 }
+
+void OscilliscopeAudioProcessorEditor::setOSCColor1()
+{
+    audioProcessor.sSelectedColorOSC1 = cTopBar.cSettings.vSelectedColorOSC1.toString();
+    setPresetColor1();
+}
+            
+void OscilliscopeAudioProcessorEditor::setOSCColor2()
+{
+    audioProcessor.sSelectedColorOSC2 = cTopBar.cSettings.vSelectedColorOSC2.toString();
+    setPresetColor2();
+}
+
+void OscilliscopeAudioProcessorEditor::setPresetColor1()
+{
+    oScopeScreen.cOscope.scopeComponent.selectColor(juce::Colour::fromString(audioProcessor.sSelectedColorOSC1));
+    
+    cTopBar.cMasterSection.cMeter.vLevelMeterColor1 = juce::Colour::fromString(audioProcessor.sSelectedColorOSC1);
+    
+    if (audioProcessor.sSelectedColorOSC1.isEmpty())
+    {
+        oScopeScreen.cOscope.scopeComponent.selectColor(juce::Colours::yellow);
+        cTopBar.cMasterSection.cMeter.vLevelMeterColor1 = juce::Colours::yellow;
+    }
+    
+}
+
+void OscilliscopeAudioProcessorEditor::setPresetColor2()
+{
+    oScopeScreen.cOscope2.scopeComponent.selectColor(juce::Colour::fromString(audioProcessor.sSelectedColorOSC2));
+    
+    cTopBar.cMasterSection.cMeter.vLevelMeterColor2 = juce::Colour::fromString(audioProcessor.sSelectedColorOSC2);
+    
+    if (audioProcessor.sSelectedColorOSC2.isEmpty())
+    {
+        oScopeScreen.cOscope2.scopeComponent.selectColor(juce::Colours::green);
+        cTopBar.cMasterSection.cMeter.vLevelMeterColor2 = juce::Colours::green;
+    }
+}
+
+void OscilliscopeAudioProcessorEditor::sliderValueChanged(juce::Slider *slider)
+{
+    if (slider == &cCH1.mVoltsSlider) { oScopeScreen.cOscope.scopeComponent.mVolts = audioProcessor.apvts.getRawParameterValue("CH 1 VOLTS")->load(); }
+    if (slider == &cCH2.mVoltsSlider) { oScopeScreen.cOscope2.scopeComponent.mVolts = audioProcessor.apvts.getRawParameterValue("CH 2 VOLTS")->load(); }
+
+    if (slider == &cCH1.mSecondsSlider) { oScopeScreen.cOscope.scopeComponent.mSeconds = audioProcessor.apvts.getRawParameterValue("CH 1 SECONDS")->load(); }
+    if (slider == &cCH2.mSecondsSlider) { oScopeScreen.cOscope2.scopeComponent.mSeconds = audioProcessor.apvts.getRawParameterValue("CH 2 SECONDS")->load(); }
+
+    if (slider == &cCH1.mVOffsetSlider) { oScopeScreen.cOscope.scopeComponent.mVOffset = audioProcessor.apvts.getRawParameterValue("CH 1 V OFFSET")->load(); }
+    if (slider == &cCH2.mVOffsetSlider) { oScopeScreen.cOscope2.scopeComponent.mVOffset = audioProcessor.apvts.getRawParameterValue("CH 2 V OFFSET")->load(); }
+
+    if (slider == &cCH1.mHOffsetSlider) { oScopeScreen.cOscope.scopeComponent.mHOffset = audioProcessor.apvts.getRawParameterValue("CH 1 H OFFSET")->load(); }
+    if (slider == &cCH2.mHOffsetSlider) { oScopeScreen.cOscope2.scopeComponent.mHOffset = audioProcessor.apvts.getRawParameterValue("CH 2 H OFFSET")->load(); }
+
+    if (slider == &cGlobal.mThicknessSlider) {  oScopeScreen.cOscope.scopeComponent.mThick = audioProcessor.apvts.getRawParameterValue("LINE THICKNESS")->load(); oScopeScreen.cOscope2.scopeComponent.mThick = audioProcessor.apvts.getRawParameterValue("LINE THICKNESS")->load(); }
+    
+    if (slider == &cGlobal.mGainSlider){
+    audioProcessor.cOscilloscope.gainValue = audioProcessor.apvts.getRawParameterValue("GAIN")->load();    audioProcessor.cOscilloscope.gainValue2 = audioProcessor.apvts.getRawParameterValue("GAIN")->load(); }
+    
+    if (slider == &cGlobal.mRotationSlider) {
+        oScopeScreen.cOscope.scopeComponent.mRotation = audioProcessor.apvts.getRawParameterValue("ROTATION")->load();
+        oScopeScreen.cOscope2.scopeComponent.mRotation = audioProcessor.apvts.getRawParameterValue("ROTATION")->load(); }
+}
+
+
+void OscilliscopeAudioProcessorEditor::comboBoxChanged(juce::ComboBox *box)
+{
+    if (box == &cTopBar.cPresetManager.mLoadPresetDropDown)
+    {
+        setPresetColor1();
+        setPresetColor2();
+        
+        sliderValueChanged(&cCH1.mVoltsSlider);
+        sliderValueChanged(&cCH2.mVoltsSlider);
+
+        sliderValueChanged(&cCH1.mSecondsSlider);
+        sliderValueChanged(&cCH2.mSecondsSlider);
+        
+        sliderValueChanged(&cCH1.mVOffsetSlider);
+        sliderValueChanged(&cCH2.mVOffsetSlider);
+
+        sliderValueChanged(&cCH1.mHOffsetSlider);
+        sliderValueChanged(&cCH2.mHOffsetSlider);
+        
+        sliderValueChanged(&cGlobal.mGainSlider);
+        sliderValueChanged(&cGlobal.mThicknessSlider);
+        sliderValueChanged(&cGlobal.mRotationSlider);
+        
+        buttonStateChanged(&cGlobal.mMonoStereo);
+        buttonStateChanged(&mPolarity);
+        
+        buttonStateChanged(&mFullscreen);
+
+        audioProcessor.xyMode = bool(audioProcessor.apvts.getRawParameterValue("XY Mode")->load());
+        buttonStateChanged(&mXYMode);
+                
+        resized();
+        repaint();
+        
+        
+    }
+}
+

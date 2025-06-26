@@ -9,12 +9,12 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "Oscilloscope_DSP.h"
+#include "DSP/Oscilloscope_DSP.h"
 
 //==============================================================================
 /**
 */
-class OscilliscopeAudioProcessor  : public juce::AudioProcessor
+class OscilliscopeAudioProcessor  : public juce::AudioProcessor, juce::AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
@@ -50,19 +50,42 @@ public:
     const juce::String getProgramName (int index) override;
     void changeProgramName (int index, const juce::String& newName) override;
 
+    void parameterChanged(const juce::String &parameterID, float newValue) override;
+    
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples);
-    
-    float windowH { ( 800 / (6.0/3.0) ) };
-    float windowW { 800 };
-    
+  
+    float ratio { 2436 / 1125 };
+    float windowW { 800 / ratio };
+    float windowH { 800 };
+    bool xyMode { false };
+    bool fullScreen { false };
+    //Preset Management
+    juce::String pname { "DEFAULT" };
+
+    //Audio Value Tree State
+    juce::AudioProcessorValueTreeState apvts;
+
     OscilloscopeDSP cOscilloscope;
 
-private:
+    //Level Meter
+    juce::SmoothedValue<float> smoothedPeakL, smoothedPeakR, smoothedRMS, smoothedFreq;
+    float PEAKL { 0 }, PEAKR { 0 }, FREQ { 0 };
+    
+    juce::String sSelectedColorOSC1 { juce::Colours::yellowgreen.toString() }, sSelectedColorOSC2 { juce::Colours::yellow.toString()};
+    
+    
 
+private:
+    juce::AudioProcessorValueTreeState::ParameterLayout createParams();
+    
+    juce::dsp::Gain<float> volumeL, volumeR; 
+    
+//    adamski::PitchMPM pitchMPM;
+//    adamski::PitchYIN pitchYIN { 1024 };
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscilliscopeAudioProcessor)
 };

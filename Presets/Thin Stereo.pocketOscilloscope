@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<parameters PresetName="Thin Stereo" WIDTH="930.0" HEIGHT="465.0" COLOR1="ffaaffce"
+            COLOR2="ff42ccbd">
+  <PARAM id="CH 1 H OFFSET" value="1.0"/>
+  <PARAM id="CH 1 SECONDS" value="1.0"/>
+  <PARAM id="CH 1 V OFFSET" value="1.0"/>
+  <PARAM id="CH 1 VOLTS" value="1.0"/>
+  <PARAM id="CH 2 H OFFSET" value="1.0"/>
+  <PARAM id="CH 2 SECONDS" value="1.0"/>
+  <PARAM id="CH 2 V OFFSET" value="1.100000023841858"/>
+  <PARAM id="CH 2 VOLTS" value="1.0"/>
+  <PARAM id="GAIN" value="8.700000762939453"/>
+  <PARAM id="LINE THICKNESS" value="1.5"/>
+  <PARAM id="MONO/STEREO" value="1.0"/>
+  <PARAM id="PHASE" value="0.0"/>
+  <PARAM id="POWER" value="1.0"/>
+  <PARAM id="ROTATION" value="0.0"/>
+</parameters>
