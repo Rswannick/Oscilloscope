@@ -202,7 +202,12 @@ void OscilliscopeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::dsp::AudioBlock<float> block1 (buffer);
 
     auto leftBlock = block1.getSingleChannelBlock(0);
-    auto rightBlock = block1.getSingleChannelBlock(1);
+    auto rightBlock = block1.getSingleChannelBlock(0);
+    
+    if (buffer.getNumChannels() > 1)
+    {
+        rightBlock = block1.getSingleChannelBlock(1);
+    }
 
     juce::dsp::ProcessContextReplacing<float> leftContext (leftBlock);
     juce::dsp::ProcessContextReplacing<float> rightContext (rightBlock);

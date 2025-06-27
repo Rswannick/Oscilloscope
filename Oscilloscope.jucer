@@ -3,16 +3,16 @@
 <JUCERPROJECT id="fDD87g" name="pocketOscilloscope" projectType="audioplug"
               useAppConfig="0" addUsingNamespaceToJuceHeader="0" displaySplashScreen="0"
               jucerFormatVersion="1" pluginManufacturer="OSC Audio" bundleIdentifier="com.OSCaudio.pocketOscilloscope"
-              pluginVST3Category="Analyzer" pluginFormats="buildAAX,buildAU,buildStandalone,buildVST3"
+              pluginVST3Category="Analyzer" pluginFormats="buildAAX,buildAU,buildAUv3,buildStandalone,buildVST3"
               companyName="OSC Audio" companyWebsite="https://www.oscaudio.com/"
               companyEmail="support@oscaudio.com" pluginManufacturerCode="Osca"
               pluginCode="scpe" version="1.2.0" cppLanguageStandard="latest">
   <MAINGROUP id="Hldnru" name="pocketOscilloscope">
     <GROUP id="{3F177531-5B58-BD8A-8737-CF06787A335A}" name="iOSImages">
       <FILE id="nSccrW" name="OSCSplash.png" compile="0" resource="0" file="iOSImages/OSCSplash.png"
-            xcodeResource="0"/>
+            xcodeResource="1"/>
       <FILE id="FbyHSV" name="OSCSplash.storyboard" compile="0" resource="0"
-            file="iOSImages/OSCSplash.storyboard" xcodeResource="0"/>
+            file="iOSImages/OSCSplash.storyboard" xcodeResource="1"/>
     </GROUP>
     <GROUP id="{85B5065A-B6E3-CAD8-A608-3FF14F0945CB}" name="Source">
       <GROUP id="{214FBE3A-23A6-B82D-2974-1059F6DECDD4}" name="DSP">
